@@ -1,0 +1,121 @@
+/* ===== 卡路里追踪 — 全局样式 ===== */
+
+*,
+*::before,
+*::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  font-size: 16px;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  font-family: var(--font-sans);
+  font-size: var(--text-base);
+  line-height: var(--leading-normal);
+  color: var(--color-text);
+  background: var(--color-bg);
+  /* 背景光斑：高饱和柔和色块（同登录/注册页配方），供磨砂卡片在背后糊出色彩。
+     注意不用 background-attachment: fixed —— 它会令部分 Chromium 的
+     backdrop-filter 采样不到固定背景层，导致玻璃糊不出东西。 */
+  background-image:
+    radial-gradient(720px 720px at 8% -8%, rgba(134, 239, 172, 0.55), transparent 62%),
+    radial-gradient(760px 760px at 92% 10%, rgba(147, 197, 253, 0.45), transparent 62%),
+    radial-gradient(660px 660px at 52% 108%, rgba(110, 231, 183, 0.50), transparent 62%),
+    radial-gradient(460px 460px at 22% 62%, rgba(165, 243, 252, 0.38), transparent 65%);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* 深色模式下光斑减淡，保持暗调氛围 */
+[data-theme="dark"] body {
+  background-image:
+    radial-gradient(720px 720px at 8% -8%, rgba(52, 211, 153, 0.10), transparent 62%),
+    radial-gradient(760px 760px at 92% 10%, rgba(96, 165, 250, 0.08), transparent 62%),
+    radial-gradient(660px 660px at 52% 108%, rgba(5, 150, 105, 0.10), transparent 62%),
+    radial-gradient(460px 460px at 22% 62%, rgba(56, 189, 248, 0.07), transparent 65%);
+}
+
+/* 页面容器 */
+.app-shell {
+  min-height: 100vh;
+}
+
+/* 渐变背景页（认证、引导、资料） */
+.page-gradient-bg {
+  background: linear-gradient(160deg, #ECFDF5 0%, #D1F2E8 40%, #E8F5EF 100%);
+  min-height: 100vh;
+}
+
+/* 纯色背景页（首页、食物）— 透明以露出 body 背景光斑 */
+.page-solid-bg {
+  background: transparent;
+  min-height: 100vh;
+}
+
+/* 通用卡片 */
+.card {
+  background: var(--color-glass);
+  border-radius: var(--radius-xl);
+  padding: var(--space-lg);
+  box-shadow: var(--shadow-sm);
+  transition: transform var(--transition-base), box-shadow var(--transition-base);
+}
+
+.card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+/* ===== 磨砂玻璃：大表面强模糊 + 边缘高光 ===== */
+.card, .weight-card, .calorie-card, .exercise-card, .meals-card,
+.chart-card, .stat-card, .empty-state, .ws-card, .edit-form,
+.food-row, .side-bar {
+  border: 1px solid rgba(255, 255, 255, 0.30);
+  backdrop-filter: blur(20px) saturate(160%);
+  -webkit-backdrop-filter: blur(20px) saturate(160%);
+}
+
+/* 小元素：轻模糊，保持可读对比度 */
+.meal-detail-copy-btn, .ex-card, .period-btn.active,
+.panel-search .el-input__wrapper, .nutrition-item {
+  backdrop-filter: blur(10px) saturate(150%);
+  -webkit-backdrop-filter: blur(10px) saturate(150%);
+}
+
+/* 滚动条美化 */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-border);
+  border-radius: var(--radius-full);
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-text-muted);
+}
+
+/* 选中文字颜色 */
+::selection {
+  background: var(--color-primary-light);
+  color: var(--color-text-inverse);
+}
+
+/* 减少动画偏好 */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

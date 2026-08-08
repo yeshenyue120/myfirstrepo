@@ -1,0 +1,55 @@
+services:
+  db:
+    image: mysql:8.0
+    container_name: calorie-db
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: calorie_tracker
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD:-123456}
+      TZ: Asia/Shanghai
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-p$$MYSQL_ROOT_PASSWORD"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    volumes:
+      - mysql-data:/var/lib/mysql
+    ports:
+      - "33306:3306"   # 宿主机端口避让，避免与本地 MySQL 冲突
+
+  backend:
+    build: ./calorie-server
+    container_name: calorie-backend
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DB_HOST: db
+      DB_PORT: 3306
+      DB_USERNAME: root
+      DB_PASSWORD: ${DB_PASSWORD:-123456}
+      MAIL_HOST: ${MAIL_HOST:-smtp.qq.com}
+      MAIL_PORT: ${MAIL_PORT:-465}
+      MAIL_USERNAME: ${MAIL_USERNAME:-}
+      MAIL_PASSWORD: ${MAIL_PASSWORD:-}
+      JWT_SECRET: ${JWT_SECRET:-calorie-tracker-dev-secret-key-0123456789abcdef0123456789abcdef}
+      SQL_SHOW: "false"
+    ports:
+      - "8080:8080"   # 直接暴露后端，方便调试 Swagger
+
+  frontend:
+    build: ./calorie-tracker-web
+    container_name: calorie-frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      - "8081:80"     # 前端访问入口 http://localhost:8081
+
+volumes:
+  mysql-data:

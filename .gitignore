@@ -1,0 +1,30 @@
+# ===== 敏感配置（不进代码库）=====
+.env
+*.local
+
+# ===== 依赖 =====
+node_modules/
+target/
+*/target/
+
+# ===== 构建产物 =====
+dist/
+*/dist/
+
+# ===== 数据 / 资源 =====
+food_images/
+backups/
+*.sql
+!import_boohee_foods.sql
+!add_common_dishes.sql
+
+# ===== IDE / 系统 =====
+.idea/
+.vscode/
+*.iml
+.DS_Store
+Thumbs.db
+
+# ===== 日志 =====
+*.log
+logs/

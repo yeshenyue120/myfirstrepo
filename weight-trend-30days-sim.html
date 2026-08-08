@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>体重趋势图 · 30 天模拟</title>
+<script src="https://cdn.jsdelivr.net/npm/echarts@5.5.1/dist/echarts.min.js"></script>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+    background: linear-gradient(180deg, #ecfdf5 0%, #f0fdf4 40%, #f6f8f7 100%);
+    min-height: 100vh;
+    padding: 20px 12px 60px;
+    color: #0f172a;
+  }
+  .toolbar {
+    max-width: 430px;
+    margin: 0 auto 14px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+  }
+  .toolbar .group { display: flex; gap: 6px; align-items: center; }
+  .toolbar .sep { width: 1px; height: 22px; background: #d1d5db; }
+  .pill {
+    border: 1.5px solid #059669;
+    background: #f0fdf4;
+    color: #059669;
+    font-size: 12px;
+    font-weight: 600;
+    border-radius: 999px;
+    padding: 5px 14px;
+    cursor: pointer;
+    transition: all .2s;
+  }
+  .pill:hover { background: #d1fae5; }
+  .pill.active { background: #059669; color: #fff; }
+  .note {
+    max-width: 430px;
+    margin: 0 auto 14px;
+    font-size: 12px;
+    color: #64748b;
+    line-height: 1.6;
+    background: rgba(255,255,255,0.7);
+    border-radius: 12px;
+    padding: 10px 14px;
+    box-shadow: 0 1px 3px rgba(5,150,105,0.06);
+  }
+  .chart-card {
+    max-width: 430px;
+    margin: 0 auto;
+    background: rgba(255,255,255,0.62);
+    border-radius: 20px;
+    padding: 20px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.04), 0 1px 3px rgba(5,150,105,0.06);
+    transition: max-width .3s ease;
+  }
+  .chart-card.full { max-width: 100%; }
+  .card-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 16px;
+  }
+  .card-icon { font-size: 20px; }
+  .card-title { font-weight: 700; font-size: 1rem; flex: 1; }
+  .card-date { font-size: 13px; color: #64748b; }
+  .chart-box { height: 220px; width: 100%; }
+  .stat-line {
+    margin-top: 12px;
+    padding: 8px 12px;
+    background: #f0fdf4;
+    border-radius: 10px;
+    font-size: 12px;
+    color: #047857;
+    line-height: 1.7;
+  }
+  .stat-line b { color: #065f46; }
+</style>
+</head>
+<body>
+
+  <div class="toolbar">
+    <div class="group">
+      <span class="pill active" id="btnData5">当前 5 天</span>
+      <span class="pill" id="btnData30">30 天满数据</span>
+    </div>
+    <div class="sep"></div>
+    <div class="group">
+      <span class="pill active" id="btnMobile">📱 手机宽度</span>
+      <span class="pill" id="btnFull">🖥 全宽</span>
+    </div>
+  </div>
+
+  <div class="note">
+    完全复刻 <b>Home.vue renderWeightChart</b> 的配置（焦点/展开模式、起始/目标虚线、体脂副轴、渐变面积、tooltip）。
+    <br>说明：当前实现调 <code>/weights/history?days=30</code>，<b>满 30 天后最旧的记录会自动滚出</b>，图表点数永远 ≤ 30。当前数据末 5 天为你的真实记录，前面 25 天按你的真实下降趋势 + 每日波动模拟补齐。
+  </div>
+
+  <div class="chart-card" id="card">
+    <div class="card-header">
+      <span class="card-icon">📈</span>
+      <span class="card-title">体重趋势</span>
+      <span class="card-date">近30天</span>
+    </div>
+    <div id="chart" class="chart-box"></div>
+    <div class="stat-line" id="stat"></div>
+  </div>
+
+<script>
+// ===== 真实数据（2026-08-01 ~ 08-05）=====
+const REAL = {
+  dates: ['2026-08-01','2026-08-02','2026-08-03','2026-08-04','2026-08-05'],
+  weight: [97.8, 99.4, 98.6, 98.0, 97.4],
+  bf:     [23.9, 25,   26,   24,   24]
+};
+
+// ===== 30 天模拟数据（07-07 ~ 08-05，末 5 天 = 真实）=====
+const SIM30 = {
+  dates: [
+    '2026-07-07','2026-07-08','2026-07-09','2026-07-10','2026-07-11','2026-07-12','2026-07-13','2026-07-14','2026-07-15','2026-07-16',
+    '2026-07-17','2026-07-18','2026-07-19','2026-07-20','2026-07-21','2026-07-22','2026-07-23','2026-07-24','2026-07-25','2026-07-26',
+    '2026-07-27','2026-07-28','2026-07-29','2026-07-30','2026-07-31',
+    ...REAL.dates
+  ],
+  weight: [
+    100.6, 99.9, 100.3, 99.7, 99.2, 99.8, 99.1, 99.5, 98.8, 99.0,
+    98.6, 98.2, 98.7, 98.3, 97.9, 98.4, 98.0, 97.6, 98.1, 97.7,
+    98.2, 97.5, 97.9, 97.3, 97.6,
+    ...REAL.weight
+  ],
+  bf: [
+    27.1, 27.0, 26.8, 26.9, 26.5, 26.6, 26.4, 26.5, 26.1, 26.2,
+    25.9, 25.8, 25.9, 25.6, 25.4, 25.5, 25.2, 25.1, 25.2, 24.9,
+    25.0, 24.7, 24.8, 24.5, 24.3,
+    ...REAL.bf
+  ]
+};
+
+// 用户起始 / 目标（与数据库一致：admin）
+const START_W = 100;
+const TARGET_W = 90;
+
+// ===== 复刻 renderWeightChart() =====
+const chart = echarts.init(document.getElementById('chart'));
+let currentData = SIM30;
+let isFull = false;
+
+function render() {
+  const dates = currentData.dates;
+  const values = currentData.weight;
+  const bfRaw = currentData.bf.map(v => v ?? null);
+  const bfValid = bfRaw.filter(v => v != null);
+  const hasBodyFat = bfValid.length >= 2;
+
+  const dataMin = Math.min(...values);
+  const dataMax = Math.max(...values);
+  const dataRange = dataMax - dataMin;
+  const targetRange = Math.abs((START_W || dataMax) - (TARGET_W || dataMin));
+  const focusMode = targetRange > 0 && dataRange < targetRange * 0.4;
+
+  let yMin, yMax;
+  const markLines = [];
+  const graphics = [];
+
+  if (focusMode) {
+    const pad = Math.max(dataRange * 0.35, 0.3);
+    yMin = dataMin - pad;
+    yMax = dataMax + pad;
+    if (TARGET_W && TARGET_W >= yMin && TARGET_W <= yMax) {
+      markLines.push({ yAxis: TARGET_W, name: '目标', lineStyle: { color: '#f59e0b', type: 'dashed' }, label: { color: '#f59e0b', formatter: '目标 {c}kg', position: 'insideStartTop', distance: 6 } });
+    } else if (TARGET_W && TARGET_W < yMin) {
+      graphics.push({ type: 'text', left: 8, bottom: 2, style: { text: `目标 ${TARGET_W}kg ↓`, fill: '#f59e0b', fontSize: 11, fontWeight: 600 } });
+    }
+    if (START_W && START_W >= yMin && START_W <= yMax) {
+      markLines.push({ yAxis: START_W, name: '起始', lineStyle: { color: '#9ca3af', type: 'dashed' }, label: { show: false } });
+    }
+    if (START_W) {
+      graphics.push({ type: 'text', right: 8, bottom: 2, style: { text: `起始 ${START_W}kg`, fill: '#9ca3af', fontSize: 11, fontWeight: 500 } });
+    }
+  } else {
+    yMin = Math.min(dataMin, TARGET_W || dataMin) - 1;
+    yMax = Math.max(dataMax, START_W || dataMax) + 1;
+    markLines.push(
+      { yAxis: START_W, name: '起始', lineStyle: { color: '#9ca3af', type: 'dashed', width: 1.5 }, label: { show: false } },
+      { yAxis: TARGET_W, name: '目标', lineStyle: { color: '#f59e0b', type: 'dashed', width: 1.5 }, label: { fontSize: 10, color: '#f59e0b', formatter: '目标 {c}kg', position: 'insideStartTop', distance: 6 } }
+    );
+    if (START_W) {
+      graphics.push({ type: 'text', right: 8, bottom: 2, style: { text: `起始 ${START_W}kg`, fill: '#9ca3af', fontSize: 11, fontWeight: 500 } });
+    }
+  }
+
+  let bfMin, bfMax, bfInterval;
+  if (hasBodyFat) {
+    const lo = Math.min(...bfValid), hi = Math.max(...bfValid);
+    const range = hi - lo || 2;
+    const step = range <= 1 ? 0.5 : range <= 3 ? 1 : range <= 6 ? 2 : 5;
+    bfMin = Math.max(0, Math.floor((lo - step * 0.5) / step) * step);
+    bfMax = Math.ceil((hi + step * 0.5) / step) * step;
+    bfInterval = step;
+  }
+
+  chart.setOption({
+    grid: { top: 24, right: hasBodyFat ? 52 : 16, bottom: 44, left: 56 },
+    xAxis: { type: 'category', data: dates, axisLabel: { fontSize: 10, color: '#9ca3af' }, axisLine: { show: false }, axisTick: { show: false } },
+    yAxis: [
+      { type: 'value', name: 'kg', min: yMin, max: yMax, splitNumber: 5, splitLine: { lineStyle: { color: '#f3f4f6' } }, axisLabel: { fontSize: 10, color: '#9ca3af', margin: 8 }, axisTick: { show: false }, axisLine: { show: false } },
+      ...(hasBodyFat ? [{ type: 'value', name: '体脂%', min: bfMin, max: bfMax, interval: bfInterval, splitNumber: 4, position: 'right', splitLine: { show: false }, axisLabel: { fontSize: 10, color: '#818cf8', margin: 8 }, nameTextStyle: { color: '#818cf8', fontSize: 10 }, axisTick: { show: false }, axisLine: { show: false } }] : [])
+    ],
+    tooltip: {
+      trigger: 'axis',
+      formatter: (params) => {
+        const arr = Array.isArray(params) ? params : [params];
+        return arr.map(p => {
+          const unit = p.seriesName === '体脂' ? '%' : 'kg';
+          const v = p.value == null ? '—' : `${p.value}${unit}`;
+          return `${p.marker}${p.seriesName}：${v}`;
+        }).join('<br/>');
+      },
+      backgroundColor: '#fff', borderColor: '#e5e7eb', textStyle: { color: '#374151', fontSize: 13 }
+    },
+    graphic: graphics,
+    series: [
+      { name: '体重', type: 'line', data: values, smooth: true, lineStyle: { color: '#10b981', width: 2.5 }, itemStyle: { color: '#10b981' }, symbol: 'circle', symbolSize: 5, areaStyle: { color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [{ offset: 0, color: 'rgba(16,185,129,0.2)' }, { offset: 1, color: 'rgba(16,185,129,0)' }]) }, markLine: { silent: true, symbol: 'none', lineStyle: { type: 'dashed', color: '#d1d5db', width: 1.5 }, label: { fontSize: 10, color: '#9ca3af' }, data: markLines } },
+      ...(hasBodyFat ? [{ name: '体脂', type: 'line', yAxisIndex: 1, data: bfRaw, connectNulls: true, smooth: true, lineStyle: { color: '#818cf8', width: 2 }, itemStyle: { color: '#818cf8' }, symbol: 'circle', symbolSize: 4, areaStyle: { color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [{ offset: 0, color: 'rgba(129,140,248,0.15)' }, { offset: 1, color: 'rgba(129,140,248,0)' }]) } }] : [])
+    ]
+  }, { notMerge: true });
+
+  updateStat();
+}
+
+function countShownLabels() {
+  try {
+    const axis = chart.getModel().getAxis('x');
+    if (typeof axis.getLabelInterval === 'function') {
+      const interval = axis.getLabelInterval();
+      if (typeof interval === 'number' && interval > 0) {
+        return Math.ceil(currentData.dates.length / (interval + 1));
+      }
+    }
+  } catch (e) {}
+  return null;
+}
+
+function updateStat() {
+  const n = currentData.dates.length;
+  const bfValid = currentData.bf.filter(v => v != null).length;
+  const wMin = Math.min(...currentData.weight), wMax = Math.max(...currentData.weight);
+  const range = wMax - wMin;
+  const shown = countShownLabels();
+  const shownText = shown != null
+    ? `X 轴实际显示 <b>${shown}</b> 个日期标签（${currentData.dates[0].slice(5)} ~ ${currentData.dates[n-1].slice(5)} 区间，ECharts 自动抽稀）`
+    : `日期标签由 ECharts <b>自动抽稀</b>（相邻不重叠）`;
+  document.getElementById('stat').innerHTML =
+    `<b>${n}</b> 个数据点（满 30 天后最旧记录自动滚出，不会再增加） · 体重范围 ${wMin}~${wMax}kg · 体脂 ${bfValid} 点<br>` +
+    shownText + `<br>` +
+    `模式：<b>${range < 4 ? '聚焦' : '展开'}</b>（数据跨度 &lt; 起始 100→目标 90 跨度 40% 时聚焦数据区间）`;
+}
+
+// ===== 交互 =====
+function setData(key) {
+  currentData = key === '30' ? SIM30 : REAL;
+  document.getElementById('btnData5').classList.toggle('active', key === '5');
+  document.getElementById('btnData30').classList.toggle('active', key === '30');
+  render();
+}
+function setWidth(full) {
+  isFull = full;
+  document.getElementById('card').classList.toggle('full', full);
+  document.getElementById('btnMobile').classList.toggle('active', !full);
+  document.getElementById('btnFull').classList.toggle('active', full);
+  chart.resize();
+}
+document.getElementById('btnData5').addEventListener('click', () => setData('5'));
+document.getElementById('btnData30').addEventListener('click', () => setData('30'));
+document.getElementById('btnMobile').addEventListener('click', () => setWidth(false));
+document.getElementById('btnFull').addEventListener('click', () => setWidth(true));
+window.addEventListener('resize', () => chart.resize());
+
+render();
+</script>
+</body>
+</html>
