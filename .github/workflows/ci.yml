@@ -60,6 +60,11 @@ jobs:
           cd calorie-tracker-web
           npm ci
 
+      - name: Run frontend tests
+        run: |
+          cd calorie-tracker-web
+          npm test
+
       - name: Build frontend
         run: |
           cd calorie-tracker-web
