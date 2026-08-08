@@ -79,18 +79,18 @@ public class MealRecordController {
 
     // 删除单次记录
     @DeleteMapping("/{recordId}")
-    public ResponseEntity<String> deleteRecord(@PathVariable Long recordId) {
+    public ResponseEntity<Void> deleteRecord(@PathVariable Long recordId) {
         mealRecordService.deleteRecord(recordId);
-        return ResponseEntity.ok("删除成功");
+        return ResponseEntity.noContent().build();
     }
 
     // 清空某天所有记录
     @DeleteMapping("/{userId}/date")
-    public ResponseEntity<String> deleteByDate(
+    public ResponseEntity<Void> deleteByDate(
             @PathVariable Long userId,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
         mealRecordService.deleteRecordsByDate(userId, date);
-        return ResponseEntity.ok("删除成功");
+        return ResponseEntity.noContent().build();
     }
 
     // 某天总热量

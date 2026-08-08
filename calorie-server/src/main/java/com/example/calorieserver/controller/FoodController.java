@@ -79,15 +79,15 @@ public class FoodController {
     // 注：userId 暂时从请求参数传，后面加 JWT 后从 Token 获取
 
     @PostMapping("/favorite")
-    public ResponseEntity<String> addFavorite(@RequestParam Long userId, @RequestParam Long foodId) {
+    public ResponseEntity<Void> addFavorite(@RequestParam Long userId, @RequestParam Long foodId) {
         foodService.addFavorite(userId, foodId);
-        return ResponseEntity.ok("收藏成功");
+        return ResponseEntity.noContent().build();
     }
 
     @DeleteMapping("/favorite")
-    public ResponseEntity<String> removeFavorite(@RequestParam Long userId, @RequestParam Long foodId) {
+    public ResponseEntity<Void> removeFavorite(@RequestParam Long userId, @RequestParam Long foodId) {
         foodService.removeFavorite(userId, foodId);
-        return ResponseEntity.ok("取消收藏");
+        return ResponseEntity.noContent().build();
     }
 
     // 收藏的食物列表（返回 Food 对象）
@@ -112,9 +112,9 @@ public class FoodController {
 
     // 删除自定义食物
     @DeleteMapping("/custom/{foodId}")
-    public ResponseEntity<String> deleteCustomFood(@PathVariable Long foodId, @RequestParam Long userId) {
+    public ResponseEntity<Void> deleteCustomFood(@PathVariable Long foodId, @RequestParam Long userId) {
         foodService.deleteCustomFood(foodId, userId);
-        return ResponseEntity.ok("删除成功");
+        return ResponseEntity.noContent().build();
     }
 
     // 用户自定义食物

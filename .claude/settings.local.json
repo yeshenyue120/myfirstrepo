@@ -9,7 +9,8 @@
       "Bash(curl -s -w '\\\\nHTTP_CODE:%{http_code}' -X POST http://localhost:8080/api/foods/custom -H 'Authorization: Bearer eyJhbGciOiJIUzM4NCJ9.eyJzdWIiOiIxIiwicm9sZSI6IlVTRVIiLCJpYXQiOjE3ODYwODAxNzAsImV4cCI6MTc4NjY4NDk3MH0.lwJbSlNxLi1TuIkypfhj3tKgYLTTlIim0UmiQYsIqmcG_oZVbsfmIZxEvoPgASx2' -H 'Content-Type: application/json' -d '{\"userId\":1,\"name\":\"冒烟测试食物\",\"categoryId\":999,\"caloriesPer100g\":100,\"proteinPer100g\":10,\"fatPer100g\":5,\"carbsPer100g\":3}')",
       "Bash(curl -s http://localhost:8080/api/records/1/total -H 'Authorization: Bearer eyJhbGciOiJIUzM4NCJ9.eyJzdWIiOiIxIiwicm9sZSI6IlVTRVIiLCJpYXQiOjE3ODYwODAxNzAsImV4cCI6MTc4NjY4NDk3MH0.lwJbSlNxLi1TuIkypfhj3tKgYLTTlIim0UmiQYsIqmcG_oZVbsfmIZxEvoPgASx2')",
       "Bash(curl -s http://localhost:8080/api/records/summary/1 -H 'Authorization: Bearer eyJhbGciOiJIUzM4NCJ9.eyJzdWIiOiIxIiwicm9sZSI6IlVTRVIiLCJpYXQiOjE3ODYwODAxNzAsImV4cCI6MTc4NjY4NDk3MH0.lwJbSlNxLi1TuIkypfhj3tKgYLTTlIim0UmiQYsIqmcG_oZVbsfmIZxEvoPgASx2')",
-      "Bash(curl -s http://localhost:8080/api/stats/report/1?period=monthly -H 'Authorization: Bearer eyJhbGciOiJIUzM4NCJ9.eyJzdWIiOiIxIiwicm9sZSI6IlVTRVIiLCJpYXQiOjE3ODYwODAxNzAsImV4cCI6MTc4NjY4NDk3MH0.lwJbSlNxLi1TuIkypfhj3tKgYLTTlIim0UmiQYsIqmcG_oZVbsfmIZxEvoPgASx2')"
+      "Bash(curl -s http://localhost:8080/api/stats/report/1?period=monthly -H 'Authorization: Bearer eyJhbGciOiJIUzM4NCJ9.eyJzdWIiOiIxIiwicm9sZSI6IlVTRVIiLCJpYXQiOjE3ODYwODAxNzAsImV4cCI6MTc4NjY4NDk3MH0.lwJbSlNxLi1TuIkypfhj3tKgYLTTlIim0UmiQYsIqmcG_oZVbsfmIZxEvoPgASx2')",
+      "Bash(python *)"
     ],
     "deny": []
   }
