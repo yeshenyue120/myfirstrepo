@@ -7,6 +7,7 @@ import com.example.calorieserver.exception.BusinessException;
 import com.example.calorieserver.repository.*;
 import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
@@ -25,6 +26,7 @@ public class FoodService {
     // ===== 分类相关 =====
 
     // 查所有分类
+    @Cacheable(cacheNames = "foodCategories")
     public List<FoodCategory> getAllCategories() {
         return foodCategoryRepository.findAll();
     }
@@ -32,16 +34,19 @@ public class FoodService {
     // ===== 食物查询 =====
 
     // 查常见食物
+    @Cacheable(cacheNames = "foodCommon")
     public List<Food> getCommonFoods() {
         return foodRepository.findByIsPublicTrueAndIsCommonTrue();
     }
 
     // 按分类查
+    @Cacheable(cacheNames = "foodCategory", key = "#categoryId")
     public List<Food> getFoodsByCategory(Long categoryId) {
         return foodRepository.findByCategoryIdAndIsPublicTrueOrderByCaloriesPer100gAsc(categoryId);
     }
 
     // 按分类查常见食物（分类页只展示常见）
+    @Cacheable(cacheNames = "foodCategoryCommon", key = "#categoryId")
     public List<Food> getCommonFoodsByCategory(Long categoryId) {
         return foodRepository.findByCategoryIdAndIsPublicTrueAndIsCommonTrueOrderByCaloriesPer100gAsc(categoryId);
     }
@@ -57,12 +62,14 @@ public class FoodService {
     // ===== 分页（食物库全量浏览） =====
 
     // 全库公共食物分页
+    @Cacheable(cacheNames = "foodLibrary", key = "#page + '-' + #size")
     public FoodPageResponse getFoodLibraryPage(int page, int size) {
         Page<Food> result = foodRepository.findByIsPublicTrueOrderByCaloriesPer100gAsc(PageRequest.of(page, size));
         return toPageResponse(result);
     }
 
     // 全库关键词搜索分页
+    @Cacheable(cacheNames = "foodSearchPage", key = "#keyword + ':' + #page + ':' + #size")
     public FoodPageResponse searchFoodsPage(String keyword, int page, int size) {
         Page<Food> result = foodRepository
                 .findByNameContainingAndIsPublicTrueOrderByCaloriesPer100gAsc(keyword, PageRequest.of(page, size));

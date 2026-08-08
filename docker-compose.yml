@@ -21,6 +21,21 @@ services:
     ports:
       - "33306:3306"   # 宿主机端口避让，避免与本地 MySQL 冲突
 
+  redis:
+    image: redis:7
+    container_name: calorie-redis
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    volumes:
+      - redis-data:/data
+    ports:
+      - "6379:6379"
+
   backend:
     build: ./calorie-server
     container_name: calorie-backend
@@ -28,11 +43,15 @@ services:
     depends_on:
       db:
         condition: service_healthy
+      redis:
+        condition: service_healthy
     environment:
       DB_HOST: db
       DB_PORT: 3306
       DB_USERNAME: root
       DB_PASSWORD: ${DB_PASSWORD:-123456}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
       MAIL_HOST: ${MAIL_HOST:-smtp.qq.com}
       MAIL_PORT: ${MAIL_PORT:-465}
       MAIL_USERNAME: ${MAIL_USERNAME:-}
@@ -53,3 +72,4 @@ services:
 
 volumes:
   mysql-data:
+  redis-data:
