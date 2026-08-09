@@ -7,13 +7,16 @@ import com.example.calorieserver.dto.UserResponse;
 import com.example.calorieserver.entity.User;
 import com.example.calorieserver.exception.BusinessException;
 import com.example.calorieserver.repository.UserRepository;
+import com.example.calorieserver.security.ForbiddenException;
 import com.example.calorieserver.security.JwtUtil;
+import com.example.calorieserver.security.SecurityUtil;
 import com.example.calorieserver.util.TimeUtil;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
@@ -23,6 +26,7 @@ import java.util.Optional;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -145,6 +149,65 @@ class UserServiceTest {
         UserResponse resp = userService.login(loginReq("tester", "pass123"));
 
         assertEquals("tester", resp.getUsername());
+    }
+
+    // ===== 修改密码 =====
+    // changePassword 用静态 SecurityUtil.currentUserId() 取登录用户，需 mockStatic
+
+    @Test
+    void changePassword_notLoggedIn_throwsForbidden() {
+        try (MockedStatic<SecurityUtil> mocked = mockStatic(SecurityUtil.class)) {
+            mocked.when(SecurityUtil::currentUserId).thenReturn(null);
+            assertThrows(ForbiddenException.class, () -> userService.changePassword("old", "new123"));
+        }
+    }
+
+    @Test
+    void changePassword_userNotFound_throws() {
+        try (MockedStatic<SecurityUtil> mocked = mockStatic(SecurityUtil.class)) {
+            mocked.when(SecurityUtil::currentUserId).thenReturn(1L);
+            when(userRepository.findById(1L)).thenReturn(Optional.empty());
+            assertThrows(BusinessException.class, () -> userService.changePassword("old", "new123"));
+        }
+    }
+
+    @Test
+    void changePassword_wrongOldPassword_throws() {
+        try (MockedStatic<SecurityUtil> mocked = mockStatic(SecurityUtil.class)) {
+            mocked.when(SecurityUtil::currentUserId).thenReturn(1L);
+            when(userRepository.findById(1L)).thenReturn(Optional.of(userWithPassword("pass123")));
+            BusinessException ex = assertThrows(BusinessException.class,
+                    () -> userService.changePassword("wrongpass", "new123"));
+            assertEquals("原密码错误", ex.getMessage());
+        }
+    }
+
+    @Test
+    void changePassword_sameAsOld_throws() {
+        try (MockedStatic<SecurityUtil> mocked = mockStatic(SecurityUtil.class)) {
+            mocked.when(SecurityUtil::currentUserId).thenReturn(1L);
+            when(userRepository.findById(1L)).thenReturn(Optional.of(userWithPassword("pass123")));
+            BusinessException ex = assertThrows(BusinessException.class,
+                    () -> userService.changePassword("pass123", "pass123"));
+            assertEquals("新密码不能与原密码相同", ex.getMessage());
+        }
+    }
+
+    @Test
+    void changePassword_success_encodesNewPassword() {
+        try (MockedStatic<SecurityUtil> mocked = mockStatic(SecurityUtil.class)) {
+            mocked.when(SecurityUtil::currentUserId).thenReturn(1L);
+            when(userRepository.findById(1L)).thenReturn(Optional.of(userWithPassword("pass123")));
+            when(userRepository.save(any(User.class))).thenAnswer(inv -> inv.getArgument(0));
+
+            userService.changePassword("pass123", "newpass123");
+
+            ArgumentCaptor<User> captor = ArgumentCaptor.forClass(User.class);
+            verify(userRepository).save(captor.capture());
+            User saved = captor.getValue();
+            assertNotEquals("newpass123", saved.getPassword()); // 新密码加密存储
+            assertTrue(new BCryptPasswordEncoder().matches("newpass123", saved.getPassword()));
+        }
     }
 
     // ===== 按邮箱查询 =====

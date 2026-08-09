@@ -40,4 +40,14 @@ app:
     secret: "${JWT_SECRET:calorie-tracker-dev-secret-key-0123456789abcdef0123456789abcdef}"
     expiration-ms: 604800000  # 7 天
 
+# Actuator 配置：只暴露健康检查与 info，其余敏感端点默认不暴露
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: always
+
 

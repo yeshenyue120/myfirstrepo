@@ -7,7 +7,9 @@ import com.example.calorieserver.dto.UserResponse;
 import com.example.calorieserver.entity.User;
 import com.example.calorieserver.exception.BusinessException;
 import com.example.calorieserver.repository.UserRepository;
+import com.example.calorieserver.security.ForbiddenException;
 import com.example.calorieserver.security.JwtUtil;
+import com.example.calorieserver.security.SecurityUtil;
 import com.example.calorieserver.util.CalorieCalculator;
 import com.example.calorieserver.util.TimeUtil;
 import org.springframework.transaction.annotation.Transactional;
@@ -144,6 +146,27 @@ public class UserService {
 
         User saved = userRepository.save(user);
         return UserResponse.fromEntity(saved);
+    }
+
+    // 修改密码：已登录用户改自己的密码，userId 从 token 取（防越权改他人密码）
+    @Transactional
+    public void changePassword(String oldPassword, String newPassword) {
+        Long userId = SecurityUtil.currentUserId();
+        if (userId == null) {
+            throw new ForbiddenException("未登录或登录已过期");
+        }
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new BusinessException("用户不存在"));
+
+        if (!passwordEncoder.matches(oldPassword, user.getPassword())) {
+            throw new BusinessException("原密码错误");
+        }
+        if (passwordEncoder.matches(newPassword, user.getPassword())) {
+            throw new BusinessException("新密码不能与原密码相同");
+        }
+
+        user.setPassword(passwordEncoder.encode(newPassword));
+        userRepository.save(user);
     }
 
     // 查询用户资料（供前端体重变化后同步最新目标）

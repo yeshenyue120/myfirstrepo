@@ -1,6 +1,11 @@
 # ===== 敏感配置（不进代码库）=====
 .env
 *.local
+# 本地 Claude 权限设置（含本地 JWT token / 冒烟命令），仅本地使用
+.claude/settings.local.json
+
+# ===== 废弃 worktree =====
+Project-master/
 
 # ===== 依赖 =====
 node_modules/

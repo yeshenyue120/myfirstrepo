@@ -101,6 +101,15 @@
       </template>
     </div>
 
+    <!-- 设置：账号安全 -->
+    <div class="settings-card">
+      <div class="settings-title">账号安全</div>
+      <div class="settings-row clickable" @click="openChangePassword">
+        <span class="settings-label">🔑 修改密码</span>
+        <span class="arrow">›</span>
+      </div>
+    </div>
+
     <div class="info-cards">
       <div class="info-card" @click="$router.push('/edit-profile')">
         <span>✏️ 编辑个人资料</span>
@@ -120,6 +129,25 @@
         <span class="arrow">›</span>
       </div>
     </div>
+
+    <!-- 修改密码弹窗 -->
+    <el-dialog v-model="pwdDialogVisible" title="修改密码" width="400px" :close-on-click-modal="false">
+      <el-form ref="pwdFormRef" :model="pwdForm" :rules="pwdRules" label-width="0">
+        <el-form-item prop="oldPassword">
+          <el-input v-model="pwdForm.oldPassword" type="password" show-password placeholder="原密码" />
+        </el-form-item>
+        <el-form-item prop="newPassword">
+          <el-input v-model="pwdForm.newPassword" type="password" show-password placeholder="新密码（6-32 位）" />
+        </el-form-item>
+        <el-form-item prop="confirmPassword">
+          <el-input v-model="pwdForm.confirmPassword" type="password" show-password placeholder="确认新密码" />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="pwdDialogVisible = false">取消</el-button>
+        <el-button type="primary" :loading="pwdSubmitting" @click="handleChangePassword">确认修改</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
@@ -222,6 +250,55 @@ async function handleExport() {
   } catch (e) {
     ElMessage.error(e.message || '导出失败')
   } finally { exporting.value = false }
+}
+
+// ===== 修改密码 =====
+const pwdDialogVisible = ref(false)
+const pwdSubmitting = ref(false)
+const pwdFormRef = ref(null)
+const pwdForm = ref({ oldPassword: '', newPassword: '', confirmPassword: '' })
+const pwdRules = {
+  oldPassword: [{ required: true, message: '请输入原密码', trigger: 'blur' }],
+  newPassword: [
+    { required: true, message: '请输入新密码', trigger: 'blur' },
+    { min: 6, max: 32, message: '密码长度需在 6-32 位之间', trigger: 'blur' }
+  ],
+  confirmPassword: [
+    { required: true, message: '请确认新密码', trigger: 'blur' },
+    {
+      validator: (rule, value, callback) => {
+        if (value !== pwdForm.value.newPassword) callback(new Error('两次输入的密码不一致'))
+        else callback()
+      },
+      trigger: 'blur'
+    }
+  ]
+}
+
+function openChangePassword() {
+  pwdForm.value = { oldPassword: '', newPassword: '', confirmPassword: '' }
+  pwdFormRef.value?.clearValidate()
+  pwdDialogVisible.value = true
+}
+
+async function handleChangePassword() {
+  const valid = await pwdFormRef.value.validate().catch(() => false)
+  if (!valid) return
+  pwdSubmitting.value = true
+  try {
+    await api.put('/auth/password', {
+      oldPassword: pwdForm.value.oldPassword,
+      newPassword: pwdForm.value.newPassword
+    })
+    pwdDialogVisible.value = false
+    ElMessage.success('密码修改成功，请重新登录')
+    // 强制登出：JWT 无失效机制，改密后旧 token 仍有效，为安全让用户重新登录
+    localStorage.removeItem('user')
+    localStorage.removeItem('token')
+    router.push('/login')
+  } catch (e) {
+    ElMessage.error(e.message || '修改失败，请稍后再试')
+  } finally { pwdSubmitting.value = false }
 }
 </script>
 
@@ -371,4 +448,17 @@ async function handleExport() {
   background: var(--color-primary); color: #fff; font-weight: 600;
 }
 .settings-hint { font-size: 11px; color: var(--color-text-muted); margin-top: 8px; }
+
+/* ===== 账号安全 ===== */
+.settings-row.clickable {
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  border-radius: var(--radius-sm);
+}
+.settings-row.clickable:hover { background: var(--color-glass-strong); }
+.settings-row.clickable .arrow {
+  font-size: 22px; color: var(--color-text-muted);
+  transition: transform var(--transition-fast);
+}
+.settings-row.clickable:hover .arrow { transform: translateX(3px); }
 </style>

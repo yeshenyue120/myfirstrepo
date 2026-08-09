@@ -1,5 +1,6 @@
 package com.example.calorieserver.controller;
 
+import com.example.calorieserver.dto.ChangePasswordRequest;
 import com.example.calorieserver.dto.ForgotPasswordRequest;
 import com.example.calorieserver.dto.LoginRequest;
 import com.example.calorieserver.dto.RegisterRequest;
@@ -44,6 +45,13 @@ public class AuthController {
     @PostMapping("/reset-password")
     public ResponseEntity<Void> resetPassword(@Valid @RequestBody ResetPasswordRequest request) {
         passwordResetService.resetPassword(request.getToken(), request.getNewPassword());
+        return ResponseEntity.ok().build();
+    }
+
+    // 修改密码：已登录用户改自己的密码（userId 从 token 取）
+    @PutMapping("/password")
+    public ResponseEntity<Void> changePassword(@Valid @RequestBody ChangePasswordRequest request) {
+        userService.changePassword(request.getOldPassword(), request.getNewPassword());
         return ResponseEntity.ok().build();
     }
 

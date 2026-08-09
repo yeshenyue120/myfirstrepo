@@ -67,8 +67,9 @@ AuthControllerTest {
 
     @Test
     void register_blankUsername_returns400() throws Exception {
+        // 用全空格触发 @NotBlank（长度 3 通过 @Size），避免与 @Size 冲突导致断言不确定
         mockMvc.perform(post("/api/auth/register").contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"username\":\"\",\"email\":\"a@b.com\",\"password\":\"123456\"}"))
+                        .content("{\"username\":\"   \",\"email\":\"a@b.com\",\"password\":\"123456\"}"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message").value("用户名不能为空"));
         verifyNoInteractions(userService);
@@ -145,6 +146,33 @@ AuthControllerTest {
                         .content("{\"newPassword\":\"newpass123\"}"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message").value("重置链接无效"));
+    }
+
+    // ===== PUT /api/auth/password（修改密码）=====
+
+    @Test
+    void changePassword_success_returns200() throws Exception {
+        mockMvc.perform(put("/api/auth/password").contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"oldPassword\":\"123456\",\"newPassword\":\"newpass123\"}"))
+                .andExpect(status().isOk());
+        verify(userService).changePassword("123456", "newpass123");
+    }
+
+    @Test
+    void changePassword_blankOldPassword_returns400() throws Exception {
+        mockMvc.perform(put("/api/auth/password").contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"oldPassword\":\"\",\"newPassword\":\"newpass123\"}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("请输入原密码"))
+                .andExpect(result -> verifyNoInteractions(userService));
+    }
+
+    @Test
+    void changePassword_shortNewPassword_returns400() throws Exception {
+        mockMvc.perform(put("/api/auth/password").contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"oldPassword\":\"123456\",\"newPassword\":\"123\"}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("密码长度需在 6-32 位之间"));
     }
 
     // ===== PUT /api/auth/onboarding/{userId} =====

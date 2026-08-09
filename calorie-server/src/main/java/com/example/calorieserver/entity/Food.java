@@ -22,7 +22,8 @@ public class Food {
     private String name;
 
     // 多对一：多个食物属于一个分类
-    @ManyToOne(fetch = FetchType.LAZY)
+    // EAGER：前端总是需要分类名，且缓存序列化时懒加载代理会报错（需完整对象才能存进 Redis）
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "category_id", nullable = false)
     private FoodCategory category;
 

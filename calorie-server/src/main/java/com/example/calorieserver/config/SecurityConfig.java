@@ -45,7 +45,8 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/api/auth/register", "/api/auth/login",
                         "/api/auth/forgot-password", "/api/auth/reset-password", "/error",
-                        "/v3/api-docs/**", "/swagger-ui.html", "/swagger-ui/**", "/webjars/**").permitAll()
+                        "/v3/api-docs/**", "/swagger-ui.html", "/swagger-ui/**", "/webjars/**",
+                        "/actuator/health", "/actuator/health/**").permitAll()
                 .anyRequest().authenticated())
             .exceptionHandling(eh -> eh
                 .authenticationEntryPoint((request, response, e) -> writeJson(response, 401, "未登录或登录已过期"))
