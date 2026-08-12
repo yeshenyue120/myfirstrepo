@@ -30,6 +30,10 @@ backups/
 .DS_Store
 Thumbs.db
 
+# ===== Claude Code（仅本地使用，不进代码库）=====
+.claude/
+CLAUDE.md
+
 # ===== 日志 =====
 *.log
 logs/
