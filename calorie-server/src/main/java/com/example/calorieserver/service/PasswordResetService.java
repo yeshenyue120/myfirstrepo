@@ -37,6 +37,10 @@ public class PasswordResetService {
     @Value("${spring.mail.username:}")
     private String mailUsername;
 
+    /** 前端访问地址，用于拼邮件里的重置链接；生产通过 APP_FRONTEND_URL 注入 */
+    @Value("${app.frontend.url:http://localhost:5173}")
+    private String frontendUrl;
+
     /**
      * 申请重置：生成 30 分钟有效的一次性 token 并发邮件。
      * 防枚举：邮箱不存在时静默成功，不泄露注册状态；发信失败只记日志，前端同样返回成功。
@@ -90,7 +94,7 @@ public class PasswordResetService {
     }
 
     private void sendResetEmail(String toEmail, String token) {
-        String link = "http://localhost:5173/reset-password?token=" + token;
+        String link = frontendUrl + "/reset-password?token=" + token;
         // 本地调试：后端日志打印重置链接，方便无真实邮箱时联调
         log.info("[本地调试] 密码重置链接: {}", link);
         try {

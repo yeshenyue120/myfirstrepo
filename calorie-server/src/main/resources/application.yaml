@@ -39,6 +39,12 @@ app:
   jwt:
     secret: "${JWT_SECRET:calorie-tracker-dev-secret-key-0123456789abcdef0123456789abcdef}"
     expiration-ms: 604800000  # 7 天
+  cors:
+    # 允许的前端 Origin，逗号分隔；生产通过 CORS_ALLOWED_ORIGINS 注入
+    allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:*,http://127.0.0.1:*}
+  frontend:
+    # 前端访问地址（拼邮件重置链接）；生产通过 APP_FRONTEND_URL 注入
+    url: ${APP_FRONTEND_URL:http://localhost:5173}
 
 # Actuator 配置：只暴露健康检查与 info，其余敏感端点默认不暴露
 management:

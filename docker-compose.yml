@@ -63,6 +63,8 @@ services:
       MAIL_USERNAME: ${MAIL_USERNAME:-}
       MAIL_PASSWORD: ${MAIL_PASSWORD:-}
       JWT_SECRET: ${JWT_SECRET:-calorie-tracker-dev-secret-key-0123456789abcdef0123456789abcdef}
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-http://localhost:*,http://127.0.0.1:*}
+      APP_FRONTEND_URL: ${APP_FRONTEND_URL:-http://localhost:5173}
       SQL_SHOW: "false"
     ports:
       - "8080:8080"   # 直接暴露后端，方便调试 Swagger

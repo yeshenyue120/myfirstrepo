@@ -3,8 +3,11 @@ FROM maven:3.9-eclipse-temurin-21 AS build
 WORKDIR /app
 
 # 先拷贝 pom.xml 单独拉依赖，利用 Docker 层缓存加速重复构建
+# 用阿里云 maven 镜像加速国内依赖下载
 COPY pom.xml .
-RUN mvn -q dependency:go-offline
+RUN mkdir -p /root/.m2 \
+    && printf '<settings><mirrors><mirror><id>aliyun</id><mirrorOf>*</mirrorOf><url>https://maven.aliyun.com/repository/public</url></mirror></mirrors></settings>' > /root/.m2/settings.xml \
+    && mvn -q dependency:go-offline
 
 # 拷贝源码并打包（跳过测试，单测在 CI 里跑）
 COPY src ./src
